@@ -1,0 +1,676 @@
+<style>
+.footer {
+    color: black;
+    background: #E8E8E8;
+    position: fixed;
+    top: 90%;
+    text-align:center;
+    width:100%;
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+  word-wrap: normal;
+  -moz-hyphens: none;
+}
+</style>
+
+MIC training: Modern data analysis in R/RStudio
+========================================================
+author: Maciej Dobrzynski (Intitute of Cell Biology, University of Bern)
+date: March 19, 2020
+transition: fade
+width: 1600
+height: 900
+
+Roadmap for this workshop
+=========================
+
+The **aim** of this workshop is to process raw time-series data from time-lapse microscopy experiment. We will:
+
+- load data, merg different data sources,
+- clean missing data and outliers,
+- plot different data cuts,
+- perform hierarchical clustering,
+- validate clusters.
+
+Intermediate data sets throughout the workshop:
+
+- [Milestone 1](#/m1): complete merged data from all experiments
+- [Milestone 2](#/m2): the above + missing data interpolated
+- [Milestone 3](#/m3): the above + outliers removed
+- [Milestone 4](#/m4): the above + normalised trajectories
+- [Milestone 5](#/m5): the above + cluster numbers assigned to individual time series
+
+Relevant R packages
+===================
+
+`data.table`
+
+<div align="left">
+<img src="figures/datatable.png" width=200 height=200>
+</div>
+
+Extension of base R's `data.frame` stracture.
+
+Fast data manipulation with a concise SQL-like syntax.
+
+Check out the [vignette](https://cloud.r-project.org/web/packages/data.table/vignettes/datatable-intro.html) for an introduction.
+
+-------
+
+`ggplot2`
+
+<div align="left">
+<img src="figures/logo-ggplot2.png" width=200 height=200>
+<img src="figures/logo-tidyverse.jpg" width=200 height=200>
+</div>
+
+Quickly create publication-ready plots.
+
+Check out project [website](https://ggplot2.tidyverse.org) for more details.
+
+Online resources - CRAN
+================
+
+<div align="left">
+<img src="figures/web-cran.png" width=100%>
+</div>
+
+---
+
+Packages are R's greatest **strength** but may create **confusion**.
+
+CRAN = The Comprehensive R Archive Network, it is a package repository that currewntly features 15'359 packages.
+
+[https://cran.r-project.org](https://cran.r-project.org)
+
+Aside from an obligatory reference manual, many packages include **vignettes** -- digestible intros into working with a package.
+
+Online resources - Tidyverse
+================
+
+<div align="left">
+<img src="figures/web-tidyverse.png" width=100%>
+</div>
+
+---
+
+> An opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.
+
+[https://www.tidyverse.org](https://www.tidyverse.org)
+
+
+Online resources - Cheatsheets
+================
+
+<div align="left">
+<img src="figures/web-cheatsheets.png" width=100%>
+</div>
+
+---
+
+Brief, visual sumamries of packages' functionality.
+
+[https://rstudio.com/resources/cheatsheets/](https://rstudio.com/resources/cheatsheets/)
+
+
+RStudio Projects
+========================================================
+
+<div align="left">
+<img src="figures/screen-rstudioprojects.png" width=100%>
+</div>
+
+---
+
+Divide your work into multiple contexts with RStudio projects.
+
+Each project has its own working directory, workspace, history, and source documents.
+
+You can create an RStudio project:
+
+   - In a brand new directory
+   - In an existing directory where you already have R code and data
+   - By cloning a version control (Git or Subversion) repository
+   
+File > New Project... to create a new R project
+
+
+Code formatting
+===============
+left:60%
+
+<div align="left">
+<img src="figures/screen-codenavi.png" width=100%>
+</div>
+
+Use # to add comments to your code. 
+
+Any comment line with at least four trailing dashes (`-`), equal signs (`=`), or pound signs (`#`) creates a section in the code. 
+
+---
+
+Navigate code sections, using *Jump To* menu at the bottom of the editor. 
+
+The outline of code sections is in the upper right corner of the editor window.
+
+RStudio supports **folding** for code regions (small downward triangles next to line numbers on the left in the editor window).
+
+To indent or reformat the code use:
+
+   - Menu > Code > Reindent Lines (⌘I)
+   - Menu > Code > Reformat Code (⇧⌘A)
+
+Syntax convention
+=================
+
+Stick to a single naming convention throughout the code. A convenient convention is a so-called [camel notation](https://en.wikipedia.org/wiki/Camel_case#Programming_and_coding), where names of variables, constants, functions are constructed by capitalizing each comound of the name, e.g.:
+
+   - `calcStatsOfDF` - function to calculate stats
+   - `nIteration` - prefix `n` to indicate an integer variable
+   - `fPatientAge` - `f` to indicate a float variable
+   - `sPatientName` - `s` to indicate a string variable
+   - `vFileNames` - `v` for vector
+   - `lColumnNames` - `l` for a list
+
+If a variable is available/valid only within a function, prefix the name with `loc`, e.g.:
+
+  - `locNiter`
+  - `locVfileNames`
+
+
+R notebooks
+===========
+left:60%
+
+<div align="left">
+<img src="figures/screen-notebook.png" width=100%>
+</div>
+
+---
+
+An [R Notebook](https://bookdown.org/yihui/rmarkdown/notebook.html) is a document with chunks that can be executed independently and interactively, with output visible immediately beneath the input. 
+
+The text is formatted using [R Markdown](https://rmarkdown.rstudio.com/authoring_basics.html).
+
+R notebooks - export
+===================
+left:60%
+
+<div align="left">
+<img src="figures/screen-notebook-html.png" width=100%>
+</div>
+
+---
+
+Use R Notebooks to create publish-ready documents with text, graphics, and interactive plots. 
+
+Can be **exported** to html, pdf, or a Word document.
+
+Can also include **interactive** elements!
+
+data.table
+==========
+
+`Data.table` [package](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html) is a faster, more efficient framework for data manipulation compared to R's default `data.frame`. It provides a consistent syntax for subsetting, grouping, updating, merging, etc. 
+
+Let's define a data table:
+
+```{r}
+require(data.table)
+dtBabies = data.table(name= c("Jackson", "Emma", "Liam", "Ava"), 
+                    gender = c("M", "F", "M", "F"), 
+                    year2011= c(74.69, NA, 88.24, 81.77), 
+                    year2012=c(84.99, NA, NA, 96.45), 
+                    year2013=c(91.73, 75.74, 101.83, NA),
+                    year2014=c(95.32, 82.49, 108.23, NA),
+                    year2015=c(107.12, 93.73, 119.01, 105.65))
+dtBabies
+
+```
+
+data.table - general form
+=========================
+
+The general form of data.table syntax is as follows:
+
+```
+DT[i, j, by]
+
+##   R:                 i                 j        by
+## SQL:  where | order by   select | update  group by
+```
+
+**The way to read it (out loud) is:** take DT, subset/reorder rows using i, then calculate j, grouped by by.
+
+data.table - selection
+========================================================
+
+Select specific records:
+
+```{r}
+dtBabies[gender == 'M']
+```
+
+Select specific columns:
+```{r}
+dtBabies[, .(name, gender, year2015)]
+```
+
+data.table - aggregation
+========================
+
+Calculate the mean of a single column:
+
+```{r}
+dtBabies[, 
+         .(meanWeight = mean(year2015))]
+```
+
+---
+
+Calculate the mean of a single column by gender:
+
+```{r}
+dtBabies[, 
+         .(meanWeight = mean(year2015)), 
+         by = gender]
+
+```
+
+
+data.table - reference by name
+==============================
+left: 40%
+
+Hardcoding column names in the script is potentially **dangerous**, for example when for some reason column names change. 
+
+**Better solution**: store column names at the beginning of the script, where it's easy to change them. Then use variables with those names in the code. 
+
+---
+
+```{r}
+lCol = list(meas = 'weight',
+            time = 'year',
+            group = c('name', 'gender'),
+            timeLast = 'year2015')
+lCol
+```
+
+data.table - selection
+======================
+
+Select specific records:
+
+```{r}
+dtBabies[get(lCol$group[[2]]) == 'M']
+```
+
+Select specific columns:
+```{r}
+myColumns = c(lCol$group[[1]], lCol$timeLast)
+dtBabies[, ..myColumns]
+```
+
+
+data.table - aggregation (2)
+============================
+left:40%
+
+The same summary but with column names stored as strings in elements of the list `lCol`. 
+
+The `j` part of the `data.table` requires us to use a function `get` to interpret the string as the column name.
+
+---
+
+```{r}
+dtBabies[, 
+         .(meanWeight = mean(get(lCol$timeLast))), 
+         by = c(lCol$group[2])]
+
+```
+
+Wide to long format
+===================
+
+Our data table is in the wide format. To convert it to long format, use the function `melt`. 
+
+Provide the names of **identification** (`id.vars`) and **measure** variables (`measure.vars`). If none are provided, `melt` guesses them automatically, which may result in a wrong conversion. Both variables can be given as strings with column names, or as column numbers.
+
+The original data frame contains missing values; `na.rm=T` omits them in the long-format table.
+
+```{r}
+
+dtBabiesLong = data.table::melt(dtBabies, 
+                                id.vars = c('name', 'gender'), measure.vars = 3:7,
+                                variable.name = 'year', value.name = 'weight',
+                                na.rm = T)
+head(dtBabiesLong, n = 5L)
+```
+
+Long to wide
+===============
+The function `dcast` converts from long to wide format. The function has a so called *formula interface* that specifies a combination of variables that uniquely identify a row.
+
+Note that because some combinations of `name + gender + year` do not exist, the `dcast` function will introduce `NAs`.
+
+```{r}
+dtBabiesWide = data.table::dcast(dtBabiesLong, 
+                                 name + gender ~ year, 
+                                 value.var = 'weight')
+
+dtBabiesWide
+
+```
+
+Note on formula interface
+=========================
+
+There are two ways to use the formula interface with string variables:
+
+Create formula string explicitly
+
+```{r}
+as.formula(
+   paste0(
+      lCol$group[[1]], "+", lCol$group[[2]], 
+      "~", lCol$time))
+```
+
+Use `reformulate` function. The limitation being a single response variable only!
+
+```{r}
+reformulate(response = c(lCol$group[[1]], lCol$group[[2]]),
+            termlabels = lCol$time)
+```
+
+
+data.table - IO
+===============
+
+`fread`
+
+Fast reading of the files; use `nThread` option to take advantage of multiple threads and read files even faster! 
+
+[Documentation](https://www.rdocumentation.org/packages/data.table/versions/1.12.2/topics/fread).
+
+```{r, eval = F}
+require(data.table)
+require(R.utils) # read gz files directly
+
+mydt = fread(file = "inFile.csv.gz", 
+             nThread = 4)
+```
+
+***
+
+`fwrite` 
+
+for fast writing; also compressed files (gz and bz2). 
+
+[Documentation](https://www.rdocumentation.org/packages/data.table/versions/1.12.2/topics/fwrite).
+
+```{r, eval = F}
+require(data.table)
+require(R.utils) # gzip files
+
+myFilePath = "outFile.csv"
+fwrite(x = mydt,
+       file = myFilePath, 
+       row.names = F)
+
+# compresses; overwrites any pre-existing files
+gzip(myFilePath, overwrite = T)
+```
+
+Plot with ggplot2
+====================
+
+The **ggPlot** package is a powerfull plotting package that requires data in the long format. 
+
+Let's plot weight over time.
+
+```{r}
+require(ggplot2)
+p1 = ggplot2::ggplot(dtBabiesLong, 
+                aes(x = year, 
+                    y = weight)) +
+  geom_line()
+```
+
+---
+
+```{r, echo = F, fig.width = 5, fig.height = 5}
+p1
+```
+
+Oops, the plotting function doesn't know how to link the points. The logical way to link them is by `name` column.
+
+
+Plot with ggplot2 - grouping
+====================
+left:35%
+
+Here we add `group` option in the `ggplot` aesthetics (`aes`) to avoid the mistake from the above. 
+
+Also, to avoid hard-coding column names we use `aes_string` instead of `aes`. 
+
+The data will be plotted as lines, with additional dots to indicate data points
+
+---
+
+```{r, fig.width = 5, fig.height = 5}
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = lCol$time, 
+                           y = lCol$meas, 
+                           group = lCol$group[1])) +
+  geom_line() +
+  geom_point()
+```
+
+Plot with ggplot2 - facetting
+====================
+left:35%
+
+In order to produce facets per `gender`, we use function `facet_wrap`. 
+
+It uses formula interface, same as in the case of `dcast`. Again, we need to build the formula from a string.
+
+```{r}
+sFormula = paste0('~', lCol$group[2])
+
+sFormula
+```
+
+---
+
+```{r, fig.width = 10, fig.height = 5}
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = lCol$time, 
+                           y = lCol$meas, 
+                           group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(lCol$group[2])
+```
+
+
+Plot with ggplot2 - summaries
+====================
+
+```{r}
+p1 = ggplot2::ggplot(dtBabiesLong, 
+                     aes_string(x = lCol$time, 
+                                y = lCol$meas, 
+                                group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(sFormula) +
+  stat_summary(fun.y = mean, 
+               aes(group=1), 
+               geom = "line", 
+               colour = 'red')
+```
+
+Plot with ggplot2 - summaries (2)
+====================
+
+```{r,echo = F, fig.width = 18, height = 8, fig.align='center'}
+p1
+```
+
+The `group=1` overrides the by-name grouping so that we get a mean across all names for each gender, rather than the mean of each individual name within each gender (which would be the same as  individual observations).
+
+Plotting with ggplot2 - themes
+==============================
+left:65%
+
+```{r}
+p1 = ggplot2::ggplot(dtBabiesLong, 
+                     aes_string(x = lCol$time, 
+                                y = lCol$meas, 
+                                group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  stat_summary(fun.y = mean, 
+               aes(group=1), 
+               geom = "line", 
+               colour = 'red') +
+  facet_wrap(sFormula) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+```
+
+---
+
+```{r, echo = F, fig.width = 10, fig.height = 5}
+p1
+```
+
+
+Interactive plots
+============
+
+Making an interactive plot from a `ggplot` object is extremely easy. Just use `ggplotly` function from the amazing `plotly` package. The interactive plot will remain in the html document knitted from the R notebook.
+
+```{r, eval = F}
+require(plotly)
+plotly::ggplotly(p1)
+```
+
+```{r, eval = T, echo = F}
+require(plotly)
+p2 = plotly::ggplotly(p1)
+
+htmlwidgets::saveWidget(as_widget(p2), 
+                        file = "plotly-demo.html")
+```
+
+<iframe src="plotly-demo.html" style="position:absolute;height:80%;width:80%"></iframe>
+
+Wrapping into functions
+=======================
+id:func
+
+Let's write a function to calculate statistics of a data frame. In the simplest case the function will calculate the mean of a single column of a data frame.
+
+We will expand the funciton to calculate the mean by a group, and to calculate robust statistics, i.e. median instead of the mean.
+
+The function will need the following input parameters:
+
+   - the name of the data frame to use for calculations
+   - the name of the variable to summarise
+   - the name of the column with grouping (optional)
+   - a True or False parameter for robust stats (optional)
+
+Wrapping into functions
+=======================
+
+```{r}
+calcStats = function(inDt, 
+                     inMeasVar, 
+                     inGroupName = NULL, 
+                     inRobust = F) {
+  
+  if (inRobust) {
+    outDt = inDt[, 
+                 .(medianMeas = median(get(inMeasVar))), 
+                 by = inGroupName]
+  } else {
+    outDt = inDt[, 
+                 .(meanMeas = mean(get(inMeasVar))), 
+                 by = inGroupName]
+  }
+  
+  return(outDt)
+}
+```
+
+Since column names will be provided to our function as string parameters, we cannot hard-code them inside of the function. Therefore, we use function `get` to use the string stored in the variable `inMeasVar` as the column name.
+
+Wrapping into functions
+=======================
+
+Calculate the mean of the `weight` column:
+
+```{r}
+calcStats(dtBabiesLong, 'weight')
+```
+
+
+Calculate the mean of the `weight` column by `name` and `gender`. Use robust stats:
+
+```{r}
+calcStats(dtBabiesLong, 'weight', inGroupName = c('name', 'gender'), inRobust = T)
+```
+
+Documentation
+==============
+
+Once inside the function, click Menu > Code > Insert Roxygen Skeleton (Shift-Option-Command R). A pecial type of comment will be added above the function. You can add your text next to parameters.
+
+```{r}
+#' Calculates stats of a data frame
+#'
+#' @param inDt Input data table in the long format
+#' @param inMeasVar Name of the measurement column
+#' @param inGroupName Name of the grouping column (default NULL)
+#' @param inRobust If true, the function calculates median instead of the mean (default False)
+#'
+#' @return Data table with summary stats
+#' @export
+#' @import data.table
+#'
+#' @examples
+#' # example usasge 
+
+calcStats = function(inDt, inMeasVar, inGroupName = NULL, inRobust = F) {
+  
+  if (inRobust) {
+    outDt = inDt[, .(medianMeas = median(get(inMeasVar))), by = inGroupName]
+  } else {
+    outDt = inDt[, .(meanMeas = mean(get(inMeasVar))), by = inGroupName]
+  }
+  
+  return(outDt)
+}
+```
+
+Avoid for loops
+=================
+
+From [R-bloggers](https://www.r-bloggers.com/how-to-avoid-for-loop-in-r/):
+
+> A FOR loop is the most intuitive way to apply an operation to a series by looping through each item one by one, which makes perfect sense logically but should be avoided by useRs given the low efficiency.
+
+
+As an aletrnative, use `apply` function family, e.g. `lapply`.
+
+
+Parallel computations
+=====================
+
+
+`foreach`
+
