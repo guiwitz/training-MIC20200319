@@ -1,34 +1,44 @@
 # MIC training: Modern data analysis in R/RStudio
 
-Presentation, the code, and exercises to accompany the [MIC training](https://ilias.unibe.ch/goto_ilias3_unibe_crs_1713478.html) at UniBe, 19 March, 2020 (postponed to an unkown date!).
+Presentation, the code, and exercises to accompany the [MIC training](https://ilias.unibe.ch/goto_ilias3_unibe_crs_1713478.html) at UniBe, November 3, 2020.
 
 ## File description
 
-- `presentation-main.Rpres` and `html` R presentation with workshop lecture and exercises.
+- `presentation-main.Rpres` and `html` - an R presentation with workshop lecture and exercises.
 
-## Required packages
+## Required software
 
-The workflow is written in R and takes advantage of RStudio notebooks. Please download the latest RStudio from [here](https://www.rstudio.com/products/rstudio/download/#download).
+Please download the **latest** versions of the following:
 
-The analysis uses the following packages that need to be present in your RStudio installation:
+- R for macOS/Linux/Windows from [here](https://stat.ethz.ch/CRAN/), version 4.0x.
+- The latest RStudio from [here](https://www.rstudio.com/products/rstudio/download/#download), version 1.3.x.
 
+## Required R packages
+
+The workflow is written in R and takes advantage of RStudio notebooks. The analysis uses the following packages that need to be present in your RStudio installation:
+
+- `R.utils` for directly reading comressed files
+- `magrittr` for pipes (typically loaded by other packages)
 - `data.table` for fast processing of large datasets
 - `readxl` for reading Excel files
-- `R.utils` for directly reading comressed files
-- `imputeTS` for data imputation such as interpolation of NA's
 - `ggplot2` for plotting
+- `imputeTS` for data imputation such as interpolation of NA's
+- `ggthemes` for additional color schemes in ggplot
 - `plotly` for interactive plots
+- `RColorBrewer` for extended colour palettes
 - `pheatmap` for heatmap
 - `heatmaply` for interactive heatmaps
-- `RColorBrewer` for extended colour palettes
 - `scales` for percentages on y-axis in ggplots
-- `dtwclust` for dynamic time warping distance measure
-- `magrittr` for pipes (typically loaded by other packages)
 - `factoextra` for extracting and visualisation of the results of multivariate data analyses
-- `cluster` for extended cluster analysis
 - `NbClust` for determining the best number of clusters
+- `testthat` for unit testing
+- `profvis` for profiling
+- `foreach` with extension of the `for` loop
+- `doParallel` for parallel computations
+- `optparse` for command-line parameters
 
-Install these packages by typing:
+
+Install these packages by typing the following line in the R command-line interface:
 
 ```
 install.packages(c(
@@ -38,5 +48,10 @@ install.packages(c(
 					"pheatmap", "heatmaply",
 					"dendextend", "RColorBrewer", "scales",
 					"imputeTS", 
-					"dtwclust", "factoextra", "cluster", "NbClust")) 
+					"factoextra", "NbClust",
+					"testthat", "profvis",
+					"foreach", "doParallel",
+					"optparse")) 
 ```
+
+Alternatively, you can install packages using RStudio GUI by going to Tools > "Install packages...""
