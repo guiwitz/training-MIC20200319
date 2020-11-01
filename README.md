@@ -40,18 +40,18 @@ The workflow is written in R and takes advantage of RStudio notebooks. The analy
 
 Install these packages by typing the following line in the R command-line interface:
 
-```
+```{r}
 install.packages(c(
-					"data.table", "tidyverse",
-					"readxl", "R.utils",
-					"ggplot2", "plotly",
-					"pheatmap", "heatmaply",
-					"dendextend", "RColorBrewer", "scales",
-					"imputeTS", 
-					"factoextra", "NbClust",
-					"testthat", "profvis",
-					"foreach", "doParallel",
-					"optparse")) 
+  "data.table", "tidyverse",
+  "readxl", "R.utils",
+  "ggplot2", "plotly",
+  "pheatmap", "heatmaply",
+  "dendextend", "RColorBrewer", "scales",
+  "imputeTS", 
+  "factoextra", "NbClust",
+  "testthat", "profvis",
+  "foreach", "doParallel",
+  "optparse")) 
 ```
 
-Alternatively, you can install packages using RStudio GUI by going to Tools > "Install packages...""
+Alternatively, you can install packages using RStudio GUI by going to Tools > Install packages...
