@@ -1,0 +1,1681 @@
+<style>
+.footer {
+color: black;
+background: #E8E8E8;
+position: fixed;
+top: 90%;
+text-align:center;
+width:100%;
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+word-wrap: normal;
+-moz-hyphens: none;
+}
+
+.small-code pre code {
+font-size: 1em;
+}
+</style>
+
+MIC training: Modern data analysis in R/RStudio
+========================================================
+author: Maciej Dobrzyński (Institute of Cell Biology, University of Bern)
+date: November 3, 2020
+transition: fade
+width: 1600
+height: 900
+
+<div align="left">
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<img src="presentation-main-illustrations/5a6f6698.jpg" width=1600 height=200>
+</div>
+
+Roadmap for this workshop
+=========================
+
+The **first** part will demonstrate:
+
+1. Resources with R courses/tutorials,
+2. Basic programming concepts,
+3. Working with RStudio,
+4. Brief intro to `data.table` & `ggplot2`,
+5. Functions, testing, profiling, debugging,
+6. Vectorization,
+7. Parallel computations,
+8. Command-line parameters
+
+---
+
+During the **second** part we will process time-series data from a time-lapse microscopy experiment. We will:
+
+- load data, merge different data sources,
+- clean missing data and outliers,
+- plot different data cuts,
+- perform hierarchical clustering,
+- validate clusters.
+
+Intermediate datasets throughout the workshop:
+
+- [Milestone 1](practicals/data/m1_allGF_wExpDescr.csv.gz): complete merged data from all experiments
+- [Milestone 2](practicals/data/m2_allGF_wExpDescr_noNAs.csv.gz): + missing data interpolated
+- [Milestone 3](practicals/data/m3_allGF_wExpDescr_noNAs_noOut.csv.gz): + outliers removed
+- [Milestone 4](practicals/data/m4_allGF_wExpDescr_noNAs_noOut_norm0-20.csv.gz): + normalised trajectories
+- [Milestone 5](practicals/data/m5_allGF_wExpDescr_noNAs_noOut_norm0-20_cl.csv.gz): + cluster numbers assigned to individual time series
+
+A [PDF](practicals/analysis-presentation.pdf) with an introduction to datasets.
+
+A [notebook](practicals/analysis-student/analysis-student.html) with the practical session.
+
+Relevant R packages
+===================
+
+`data.table`
+
+<div align="left">
+<img src="presentation-main-illustrations/logo-datatable.png" width=200 height=200>
+</div>
+
+Extension of base R's `data.frame` structure.
+
+**Fast** data manipulation with a concise SQL-like syntax.
+
+Check out the [vignette](https://cloud.r-project.org/web/packages/data.table/vignettes/datatable-intro.html) for an introduction and [Advanced tips and tricks with data.table](http://brooksandrew.github.io/simpleblog/articles/advanced-data-table/) for expanding your knowledge. 
+
+-------
+
+`ggplot2`
+
+<div align="left">
+<img src="presentation-main-illustrations/logo-ggplot2.png" width=200 height=200>
+<img src="presentation-main-illustrations/logo-tidyverse.jpg" width=200 height=200>
+</div>
+
+Quickly create publication-ready plots.
+
+Check out project [website](https://ggplot2.tidyverse.org) for more details.
+
+Online resources - CRAN
+================
+
+<div align="left">
+<img src="presentation-main-illustrations/web-cran.png" width=100%>
+</div>
+
+---
+
+Packages are R's greatest **strength** but may create **confusion**.
+
+CRAN = The Comprehensive R Archive Network, is a package repository that currently features >15k packages.
+
+[https://cran.r-project.org](https://cran.r-project.org)
+
+Aside from an obligatory reference manual, many packages include **vignettes**, i.e. digestible intros into working with a package.
+
+Online resources - Tidyverse
+================
+
+<div align="left">
+<img src="presentation-main-illustrations/web-tidyverse.png" width=100%>
+</div>
+
+---
+
+> An opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.
+
+[https://www.tidyverse.org](https://www.tidyverse.org)
+
+
+Online resources - Cheatsheets
+================
+
+<div align="left">
+<img src="presentation-main-illustrations/web-cheatsheets.png" width=100%>
+</div>
+
+---
+
+Brief, visual sumamries of packages' functionality.
+
+[https://rstudio.com/resources/cheatsheets/](https://rstudio.com/resources/cheatsheets/)
+
+Courses/tutorials
+=================
+
+**Software Carpentry**
+
+[Programming with R](http://swcarpentry.github.io/r-novice-inflammation/)
+
+[R for Reproducible Scientific Analysis](http://swcarpentry.github.io/r-novice-gapminder/)
+
+
+**Other resources**
+
+[R Cookbook](http://www.cookbook-r.com)
+
+[R Bloggers](https://www.r-bloggers.com)
+
+[StackOverflow](https://stackoverflow.com/questions/tagged/r)
+
+---
+
+**Also**
+
+[Datanovia](https://www.datanovia.com/en/)
+
+[STHDA](http://www.sthda.com/english/)
+
+Programming concepts
+====================
+
+<div align="center">
+<img src="presentation-main-illustrations/howToEatAnElephant.jpg" width=100%>
+</div>
+
+Levels of abstraction
+=====================
+
+[PBS Crash Course CS](https://www.pbs.org/show/crash-course-computer-science/)
+
+<div align="center">
+<img src="presentation-main-illustrations/LevelOfAbstraction.png" width=100%>
+</div>
+
+Variables
+=========
+
+A **variable** refers to a storage location in computer's memory, e.g.
+
+
+```r
+myVariable = 5.3
+```
+
+The symbolic name `myVariable` refers to a memory location that stores the number `5.3`.
+
+A variable can vary!
+
+
+```r
+myVariable = myVariable + 2.8
+```
+
+We changed the value referred by the mnemonic `myVariable`. Now it stores `8.1`.
+
+Data types
+==========
+
+Data stored under variables can have different types. There are 5 of them in R. Use function `typeof()` to check.
+
+<div align="center">
+<img src="presentation-main-illustrations/data-types-in-R-4-1-520x245.jpg" width=80%>
+</div>
+
+Taken from R tutorial on [TechVidvan](https://techvidvan.com/tutorials/r-data-types/).
+
+Data structures
+===============
+
+A data structure is a way of storing and organising data. For example, in order to store 10 integers, we could define 10 variables, which isn't very efficient. Instead, we can store these numbers in a vector.
+
+<div align="center">
+<img src="presentation-main-illustrations/R-data-strucutres.jpg" width=80%>
+</div>
+
+Taken from R tutorial on [TechVidvan](https://techvidvan.com/tutorials/r-data-structures/).
+
+Control structures
+==================
+
+Control structures change the flow of the code. The changes are based on conditions, e.g. if variable `a` is greater than a certain value, do this, otherwise, do that.
+
+<div align="center">
+<img src="presentation-main-illustrations/control-structures-in-R-520x245.jpg" width=80%>
+</div>
+
+Taken from R tutorial on [TechVidvan](https://techvidvan.com/tutorials/r-control-structures/).
+
+
+Code structure
+==============
+
+Source code with the template in `examples/ex_codeTemplate.R`.
+
+
+```r
+## Load libraries ----
+library(data.table)
+library(ggplot2)
+
+## Global variables ----
+# Lists with parameters for easy recall
+lParRW = list(
+  fileIn = "experimentalResults.csv",
+  fileOut = "processedData",
+  filePlotOut = "boxPlot_activity.pdf"
+)
+
+lCol = list(
+  time = "Time_h",
+  meas = "sensor_ch0",
+  group = "Exp_cond"
+)
+
+## Custom functions ----
+# Define custom functions or 
+# load from an external file
+source("myFunctionLIbrary.R")
+
+locCalcStats = function(...) {
+  ...
+}
+```
+
+---
+
+
+```r
+## Read data ----
+dt = fread(lParRW$fileIn)
+
+## Clean data ----
+# Remove unnecessary columns
+dt[,
+   c("uselessColumn1",
+     "uselessColumn2") := NULL]
+
+## Process data ----
+
+...
+
+## Save output data ----
+fwrite(x = dt, 
+       file = lParRW$fileOut)
+
+## Save plots ----
+p1 = ggplot2(dt,
+             aes(x = ...,
+                 y = ...)) +
+  geom_line(aes(color = group))
+
+ggsave(filename = lParRW$filePlotOut, 
+       plot = p1)
+```
+
+Code formatting
+===============
+left:60%
+
+<div align="left">
+<img src="presentation-main-illustrations/screen-codenavi.png" width=100%>
+</div>
+
+Use # to add comments to your code. 
+
+Any comment line with at least four trailing characters, i.e. `-`, `=`, or `#` creates a section in the code. 
+
+<span style="color:#FF6347">Comment your code by explaining the WHY instead of the WHAT!</span>
+
+---
+
+Navigate code sections, using *Jump To* menu at the bottom of the editor. 
+
+The outline of code sections is in the upper right corner of the editor window.
+
+RStudio supports **folding** for code regions (small downward triangles next to line numbers on the left in the editor window).
+
+To indent or reformat the code use:
+
+- Menu > Code > Reindent Lines (⌘I)
+- Menu > Code > Reformat Code (⇧⌘A)
+
+
+
+Syntax convention
+=================
+
+Stick to a single naming convention throughout the code. A convenient convention is a so-called [camel notation](https://en.wikipedia.org/wiki/Camel_case#Programming_and_coding), where names of variables, constants, functions are constructed by capitalizing each comound of the name, e.g.:
+
+- `calcStatsOfDF` - function to calculate stats
+- `nIteration` - prefix `n` to indicate an integer variable
+- `fPatientAge` - `f` to indicate a float variable
+- `sPatientName` - `s` to indicate a string variable
+- `vFileNames` - `v` for vector
+- `lColumnNames` - `l` for a list
+
+If a variable is available/valid only within a function, prefix the name with `loc`, e.g.:
+
+- `locNiter`
+- `locVfileNames`
+
+RStudio Projects
+========================================================
+
+<div align="left">
+<img src="presentation-main-illustrations/screen-rstudioprojects.png" width=100%>
+</div>
+
+---
+
+Divide your work into multiple contexts with RStudio projects.
+
+Each project has its own working directory, workspace, history, and source documents.
+
+You can create an RStudio project:
+
+- In a brand new directory
+- In an existing directory where you already have R code and data
+- By cloning a version control (Git or Subversion) repository
+
+File > New Project... to create a new R project
+
+
+R notebooks
+===========
+left:60%
+
+<div align="left">
+<img src="presentation-main-illustrations/screen-notebook.png" width=90%>
+</div>
+
+---
+
+An [R Notebook](https://bookdown.org/yihui/rmarkdown/notebook.html) is a document with chunks that can be executed independently and interactively, with output visible immediately beneath the input. 
+
+The text is formatted using [R Markdown](https://rmarkdown.rstudio.com/authoring_basics.html).
+
+R notebooks - export
+===================
+left:60%
+
+<div align="left">
+<img src="presentation-main-illustrations/screen-notebook-html.png" width=100%>
+</div>
+
+---
+
+Use R Notebooks to create publish-ready documents with text, graphics, and interactive plots. 
+
+Can be **exported** to html, pdf, or a Word document.
+
+Can also include **interactive** elements!
+
+data.table
+==========
+class: small-code
+
+`Data.table` [package](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html) is a faster, more efficient framework for data manipulation compared to R's default `data.frame`. It provides a consistent syntax for subsetting, grouping, updating, merging, etc. 
+
+Let's define a data table:
+
+
+```r
+require(data.table)
+dtBabies = data.table(name= c("Jackson", "Emma", "Liam", "Ava"), 
+                      gender = c("M", "F", "M", "F"), 
+                      year2011= c(74.69, NA, 88.24, 81.77), 
+                      year2012=c(84.99, NA, NA, 96.45), 
+                      year2013=c(91.73, 75.74, 101.83, NA),
+                      year2014=c(95.32, 82.49, 108.23, NA),
+                      year2015=c(107.12, 93.73, 119.01, 105.65))
+dtBabies
+```
+
+```
+      name gender year2011 year2012 year2013 year2014 year2015
+1: Jackson      M    74.69    84.99    91.73    95.32   107.12
+2:    Emma      F       NA       NA    75.74    82.49    93.73
+3:    Liam      M    88.24       NA   101.83   108.23   119.01
+4:     Ava      F    81.77    96.45       NA       NA   105.65
+```
+
+data.table - general form
+=========================
+
+The general form of data.table syntax is as follows:
+
+
+```r
+DT[i, j, by]
+
+##   R:                 i                 j        by
+## SQL:  where | order by   select | update  group by
+```
+
+**The way to read it (out loud) is:** take DT, subset/reorder rows using `i`, then calculate `j`, grouped by `by`.
+
+data.table - selection
+========================================================
+
+Select specific records:
+
+
+```r
+dtBabies[gender == 'M']
+```
+
+```
+      name gender year2011 year2012 year2013 year2014 year2015
+1: Jackson      M    74.69    84.99    91.73    95.32   107.12
+2:    Liam      M    88.24       NA   101.83   108.23   119.01
+```
+
+Select specific columns:
+
+```r
+dtBabies[, .(name, gender, year2015)]
+```
+
+```
+      name gender year2015
+1: Jackson      M   107.12
+2:    Emma      F    93.73
+3:    Liam      M   119.01
+4:     Ava      F   105.65
+```
+
+data.table - aggregation
+========================
+
+Calculate the mean of a single column:
+
+
+```r
+dtBabies[, 
+         .(meanWeight = mean(year2015))]
+```
+
+```
+   meanWeight
+1:   106.3775
+```
+
+---
+
+Calculate the mean of a single column by gender:
+
+
+```r
+dtBabies[, 
+         .(meanWeight = mean(year2015)), 
+         by = gender]
+```
+
+```
+   gender meanWeight
+1:      M    113.065
+2:      F     99.690
+```
+
+
+data.table - reference by name
+==============================
+left: 40%
+
+Hardcoding column names in the script is potentially **dangerous**, for example when for some reason column names change. 
+
+**Better solution**: store column names at the beginning of the script, where it's easy to change them. Then use variables with those names in the code. 
+
+---
+
+
+```r
+lCol = list(meas = 'weight',
+            time = 'year',
+            group = c('name', 'gender'),
+            timeLast = 'year2015')
+lCol
+```
+
+```
+$meas
+[1] "weight"
+
+$time
+[1] "year"
+
+$group
+[1] "name"   "gender"
+
+$timeLast
+[1] "year2015"
+```
+
+data.table - selection
+======================
+
+Select specific records:
+
+
+```r
+dtBabies[get(lCol$group[[2]]) == 'M']
+```
+
+```
+      name gender year2011 year2012 year2013 year2014 year2015
+1: Jackson      M    74.69    84.99    91.73    95.32   107.12
+2:    Liam      M    88.24       NA   101.83   108.23   119.01
+```
+
+Select specific columns:
+
+```r
+myColumns = c(lCol$group[[1]], lCol$timeLast)
+dtBabies[, ..myColumns]
+```
+
+```
+      name year2015
+1: Jackson   107.12
+2:    Emma    93.73
+3:    Liam   119.01
+4:     Ava   105.65
+```
+
+
+data.table - aggregation (2)
+============================
+left:40%
+
+The same summary but with column names stored as strings in elements of the list `lCol`. 
+
+The `j` part of the `data.table` requires us to use a function `get` to interpret the string as the column name.
+
+---
+
+
+```r
+dtBabies[, 
+         .(meanWeight = mean(get(lCol$timeLast))), 
+         by = c(lCol$group[2])]
+```
+
+```
+   gender meanWeight
+1:      M    113.065
+2:      F     99.690
+```
+
+Wide to long format
+===================
+
+Our data table is in the wide format. To convert it to long format, use the function `melt`. 
+
+Provide the names of **identification** (`id.vars`) and **measure** variables (`measure.vars`). If none are provided, `melt` guesses them automatically, which may result in a wrong conversion. Both variables can be given as strings with column names, or as column numbers.
+
+The original data frame contains missing values; `na.rm=T` omits them in the long-format table.
+
+
+```r
+dtBabiesLong = data.table::melt(dtBabies, 
+                                id.vars = c('name', 'gender'), measure.vars = 3:7,
+                                variable.name = 'year', value.name = 'weight',
+                                na.rm = T)
+head(dtBabiesLong, n = 5L)
+```
+
+```
+      name gender     year weight
+1: Jackson      M year2011  74.69
+2:    Liam      M year2011  88.24
+3:     Ava      F year2011  81.77
+4: Jackson      M year2012  84.99
+5:     Ava      F year2012  96.45
+```
+
+Long to wide
+===============
+The function `dcast` converts from long to wide format. The function has a so called *formula interface* that specifies a combination of variables that uniquely identify a row.
+
+Note that because some combinations of `name + gender + year` do not exist, the `dcast` function will introduce `NAs`.
+
+
+```r
+dtBabiesWide = data.table::dcast(dtBabiesLong, 
+                                 name + gender ~ year, 
+                                 value.var = 'weight')
+
+dtBabiesWide
+```
+
+```
+      name gender year2011 year2012 year2013 year2014 year2015
+1:     Ava      F    81.77    96.45       NA       NA   105.65
+2:    Emma      F       NA       NA    75.74    82.49    93.73
+3: Jackson      M    74.69    84.99    91.73    95.32   107.12
+4:    Liam      M    88.24       NA   101.83   108.23   119.01
+```
+
+Note on formula interface
+=========================
+
+One way to use the formula interface with string variables is to create the formula string explicitly by concatenating individual string pieces:
+
+
+```r
+as.formula(
+  paste0(
+    lCol$group[[1]], "+", 
+    lCol$group[[2]], "~", 
+    lCol$time))
+```
+
+```
+name + gender ~ year
+```
+
+
+data.table - IO
+===============
+
+`fread`
+
+Fast reading of the files; use `nThread` option to take advantage of multiple threads and read files even faster! 
+
+[Documentation](https://www.rdocumentation.org/packages/data.table/versions/1.12.2/topics/fread).
+
+
+```r
+require(data.table)
+require(R.utils) # read gz files directly
+
+mydt = fread(file = "inFile.csv.gz", 
+             nThread = 4)
+```
+
+***
+
+`fwrite` 
+
+for fast writing; also compressed files (gz and bz2). 
+
+[Documentation](https://www.rdocumentation.org/packages/data.table/versions/1.12.2/topics/fwrite).
+
+
+```r
+require(data.table)
+require(R.utils) # gzip files
+
+myFilePath = "outFile.csv"
+fwrite(x = mydt,
+       file = myFilePath, 
+       row.names = F)
+
+# compresses; overwrites any pre-existing files
+gzip(myFilePath, overwrite = T)
+```
+
+Plot with ggplot2
+====================
+left:35%
+
+The **ggPlot** package is a powerfull plotting package that requires data in the long format. 
+
+Let's plot weight over time.
+
+
+```r
+myCols = c(lCol$time, 
+           lCol$meas)
+head(dtBabiesLong[, ..myCols], 5)
+```
+
+```
+       year weight
+1: year2011  74.69
+2: year2011  88.24
+3: year2011  81.77
+4: year2012  84.99
+5: year2012  96.45
+```
+
+---
+
+
+```r
+require(ggplot2)
+ggplot2::ggplot(dtBabiesLong, 
+                aes(x = year, 
+                    y = weight)) +
+  geom_line()
+```
+
+![plot of chunk unnamed-chunk-21](presentation-main-figure/unnamed-chunk-21-1.png)
+
+Oops, the plotting function doesn't know how to link the points. The logical way to link them is by the `name` column.
+
+
+Plot with ggplot2 - grouping
+====================
+left:35%
+
+Here we add `group` option in the `ggplot` aesthetics (`aes`) to avoid the mistake from the above. 
+
+Also, to avoid hard-coding column names we use `aes_string` instead of `aes`. 
+
+The data will be plotted as lines, with additional dots to indicate data points
+
+
+```r
+myCols = c(lCol$time, 
+           lCol$meas, 
+           lCol$group[1])
+head(dtBabiesLong[, ..myCols], 5)
+```
+
+```
+       year weight    name
+1: year2011  74.69 Jackson
+2: year2011  88.24    Liam
+3: year2011  81.77     Ava
+4: year2012  84.99 Jackson
+5: year2012  96.45     Ava
+```
+
+---
+
+
+```r
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = lCol$time, 
+                           y = lCol$meas, 
+                           group = lCol$group[1])) +
+  geom_line() +
+  geom_point()
+```
+
+![plot of chunk unnamed-chunk-23](presentation-main-figure/unnamed-chunk-23-1.png)
+
+Plot with ggplot2 - facetting
+====================
+left:35%
+
+In order to produce facets per `gender`, we use function `facet_wrap`. 
+
+It uses formula interface, same as in the case of `dcast`. Again, we need to build the formula from a string.
+
+
+```r
+sFormula = paste0('~', lCol$group[2])
+
+sFormula
+```
+
+```
+[1] "~gender"
+```
+
+---
+
+
+```r
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = lCol$time, 
+                           y = lCol$meas, 
+                           group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(lCol$group[2])
+```
+
+![plot of chunk unnamed-chunk-25](presentation-main-figure/unnamed-chunk-25-1.png)
+
+
+Plot with ggplot2 - summaries
+====================
+
+
+```r
+p1 = ggplot2::ggplot(dtBabiesLong, 
+                     aes_string(x = lCol$time, 
+                                y = lCol$meas, 
+                                group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(sFormula) +
+  stat_summary(fun.y = mean, 
+               aes(group=1), 
+               geom = "line", 
+               colour = 'red')
+```
+
+Plot with ggplot2 - summaries (2)
+====================
+
+<img src="presentation-main-figure/unnamed-chunk-27-1.png" title="plot of chunk unnamed-chunk-27" alt="plot of chunk unnamed-chunk-27" style="display: block; margin: auto;" />
+
+The `group=1` overrides the by-name grouping so that we get a mean across all names for each gender, rather than the mean of each individual name within each gender (which would be the same as  individual observations).
+
+Plot with ggplot2 - smoothing & trends
+====================
+
+
+```r
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = lCol$time, 
+                           y = lCol$meas)) +
+  geom_point() +
+  facet_wrap(sFormula) +
+  geom_smooth(method = "lm",
+              colour = "red")
+```
+
+![plot of chunk unnamed-chunk-28](presentation-main-figure/unnamed-chunk-28-1.png)
+
+
+Plot with ggplot2 - themes
+==============================
+left:65%
+
+Lot's of different themes and customisations, e.g. `theme_bw()`, `theme_minimal()`, etc.
+
+Also [check](https://mran.microsoft.com/snapshot/2017-02-04/web/packages/ggthemes/vignettes/ggthemes.html) the `ggthemes` package for additional themes and colour scales.
+
+
+```r
+p1 = ggplot2::ggplot(dtBabiesLong, 
+                     aes_string(x = lCol$time, 
+                                y = lCol$meas, 
+                                group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  stat_summary(fun.y = mean, 
+               aes(group=1), 
+               geom = "line", 
+               colour = 'red') +
+  facet_wrap(sFormula) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+```
+
+---
+
+![plot of chunk unnamed-chunk-30](presentation-main-figure/unnamed-chunk-30-1.png)
+
+
+Interactive plots
+============
+
+Making an interactive plot from a `ggplot` object is extremely easy. Just use `ggplotly` function from the amazing `plotly` package. The interactive plot will remain in the html document knitted from the R notebook.
+
+
+```r
+require(plotly)
+plotly::ggplotly(p1)
+```
+
+
+
+<iframe src="plotly-demo.html" style="position:absolute;height:80%;width:80%"></iframe>
+
+Wrapping into functions
+=======================
+id:func
+
+Let's write a function to calculate statistics of a data frame. In the simplest case the function will calculate the mean of a single column of a data frame.
+
+We will expand the function to calculate the mean by a group, and to calculate robust statistics, i.e. median instead of the mean.
+
+The function will need the following input parameters:
+
+- the name of the data frame to use for calculations
+- the name of the variable to summarise
+- the name of the column with grouping (optional)
+- a True or False parameter for robust stats (optional)
+
+Wrapping into functions
+=======================
+
+
+```r
+calcStats = function(inDt, 
+                     inMeasVar) {
+  
+  outDt = inDt[, 
+               .(meanMeas = mean(get(inMeasVar)))]
+  
+  return(outDt)
+}
+```
+
+Since column names will be provided to our function as string parameters, we cannot hard-code them inside of the function. Therefore, we use function `get` to use the string stored in variable `inMeasVar` as the column name.
+
+Let's apply the function to our `dtBabiesLong` table:
+
+
+```r
+calcStats(inDt = dtBabiesLong, 
+          inMeasVar = "weight")
+```
+
+```
+   meanMeas
+1: 93.79933
+```
+
+
+Wrapping into functions
+=======================
+
+Extension 1: allow for calculating the mean by group via an *optional* parameter:
+
+
+```r
+calcStats = function(inDt, 
+                     inMeasVar, 
+                     inGroupName = NULL) {
+  
+  outDt = inDt[, 
+               .(meanMeas = mean(get(inMeasVar))), 
+               by = inGroupName]
+  
+  return(outDt)
+}
+```
+
+
+```r
+calcStats(inDt = dtBabiesLong, 
+          inMeasVar = "weight",
+          inGroupName = "gender")
+```
+
+```
+   gender meanMeas
+1:      M 96.79556
+2:      F 89.30500
+```
+
+If the parameter `inGroupName` is not provided, the mean will be calculated for the entire table without grouping.
+
+Wrapping into functions
+=======================
+
+Extension 2: add a parameter `inRobust` to select between calculating the mean and the median.
+
+
+```r
+calcStats = function(inDt, 
+                     inMeasVar, 
+                     inGroupName = NULL, 
+                     inRobust = F) {
+  
+  if (inRobust) {
+    outDt = inDt[, 
+                 .(medianMeas = median(get(inMeasVar))), 
+                 by = inGroupName]
+  } else {
+    outDt = inDt[, 
+                 .(meanMeas = mean(get(inMeasVar))), 
+                 by = inGroupName]
+  }
+  
+  return(outDt)
+}
+```
+
+
+```r
+calcStats(inDt = dtBabiesLong, 
+          inMeasVar = "weight",
+          inGroupName = "gender",
+          inRobust = T)
+```
+
+```
+   gender medianMeas
+1:      M      95.32
+2:      F      88.11
+```
+
+
+Wrapping into functions
+=======================
+
+Possible extensions could involve **error handling**, e.g.:
+
+- Check whether column names provided via `inMeasVar` and `inGroupName` exist in the data table.
+- Check whether the data table is not empty.
+
+Documentation
+==============
+
+Once inside the function, click Menu > Code > Insert Roxygen Skeleton (Shift-Option-Command R). A special type of comment will be added above the function. You can add your text next to parameters.
+
+
+```r
+#' Calculates stats of a data frame
+#'
+#' @param inDt Input data table in the long format
+#' @param inMeasVar Name of the measurement column
+#' @param inGroupName Name of the grouping column (default NULL)
+#' @param inRobust If true, the function calculates median instead of the mean (default False)
+#'
+#' @return Data table with summary stats
+#' @export
+#' @import data.table
+#'
+#' @examples
+#' # example usage 
+
+calcStats = function(inDt, inMeasVar, inGroupName = NULL, inRobust = F) {
+  
+  if (inRobust) {
+    outDt = inDt[, .(medianMeas = median(get(inMeasVar))), by = inGroupName]
+  } else {
+    outDt = inDt[, .(meanMeas = mean(get(inMeasVar))), by = inGroupName]
+  }
+  
+  return(outDt)
+}
+```
+
+Idiot-proofing your code
+========================
+
+
+```r
+calcStats = function(inDt, inMeasVar, inGroupName = NULL, inRobust = F) {
+  require(data.table)
+  
+  if (is.null(inDt))
+    stop("input data.table is NULL")
+  
+  if(!is.data.table(inDt))
+    stop("input is not a data.table")
+  
+  if(nrow(inDt) == 0)
+    stop("input data.table has 0 rows")
+  
+  if(!(inMeasVar %in% names(inDt)))
+    stop("column name does not exist in the data.table")
+  
+  if(!is.logical(inRobust))
+    stop("argument inRobust must be logical, TRUE or FALSE")
+  
+  if (inRobust) {
+    outDt = inDt[, .(medianMeas = median(get(inMeasVar))), by = inGroupName]
+  } else {
+    outDt = inDt[, .(meanMeas = mean(get(inMeasVar))), by = inGroupName]
+  }
+  
+  return(outDt)
+}
+```
+
+
+Testing your code
+=================
+
+
+```r
+require(testthat)
+
+# calculated result
+resCalc = data.table(meas = 1:9)
+resTrue = data.table(meanMeas = 5.0)
+
+# Test should pass; NO message will be produced
+testthat::expect_equal(calcStats(inDt = resCalc,
+                                 inMeasVar = "meas"), 
+                       resTrue)
+
+# Test should not pass; error message will appear
+resTrue = data.table(meanMeas = 4.0)
+
+testthat::expect_equal(calcStats(inDt = resCalc,
+                                 inMeasVar = "meas"), 
+                       resTrue)
+```
+
+```
+Error: calcStats(inDt = resCalc, inMeasVar = "meas") not equal to `resTrue`.
+Column 'meanMeas': Mean relative difference: 0.2
+```
+
+
+
+
+Testing your code (2)
+=====================
+
+Create a `test` folder and create individual files with tests. The name of these files should start with `test_` prefix, e.g. `test_calcStats.R`.
+
+
+```r
+require(testthat)
+
+# Source the file with the function to test; adjust the path if required.
+source("../calcStats.R")
+
+testthat::test_that("tests", {
+  
+  expect_error(calcStats(NULL, "x"))
+  expect_equal(...)
+})
+```
+
+Run tests on the entire `tests` folder with `testthat::test_dir("examples/tests")` or on individual test files with `testthat::test_file("examples/tests/test_calcStats.R")`. 
+
+The output should like similar to this:
+
+```
+> testthat::test_file("examples/tests/test_calcStats.R")
+✓ |  OK F W S | Context
+✓ |   8       | test_calcStats
+
+══ Results ══
+OK:       8
+Failed:   0
+Warnings: 0
+Skipped:  0
+```
+
+
+Profiling your code
+===================
+
+[Profiling with RStudio](https://support.rstudio.com/hc/en-us/articles/218221837-Profiling-with-RStudio). 
+
+> The profiler is a tool for helping you to understand how R spends its time. It provides a interactive graphical interface for visualizing data from:
+
+- `Rprof`, R’s built-in tool for collecting profiling data and, 
+- `profvis`, a tool for visualizing profiles from R.
+
+> To make slow code faster, we need accurate information about what is making our code slow.
+
+<div align="center">
+<img src="presentation-main-illustrations/RStudio_profiling.png" width=100%>
+</div>
+
+Profiling time
+==============
+
+Source code in `./examples/ex_profiling_time01.R`
+
+
+```r
+require(profvis)
+
+# Define data size
+nRows = 4e5
+nCols = 150
+
+# Create data
+# Random Gaussian numbers with mean = 5 , sd = 1
+myData = matrix(rnorm(nRows * nCols, 
+                      mean = 5),
+                ncol = nCols)
+
+# Start profiling
+profvis({
+  # Get column means: 2 methods
+  # 1. Apply the mean function to every column
+  locColMeans = apply(myData, 2, mean)
+  
+  # 2. use colMeans function on the entire matrix
+  locColMeans = colMeans(myData)
+  
+  # Loop over each column.
+  # subtract mean from each column.
+  for (ii in seq_along(locColMeans)) {
+    myData[, ii] <-
+      myData[, ii] - locColMeans[ii]
+  }
+})
+```
+
+
+Profiling time - results
+========================
+
+<div align="center">
+<img src="presentation-main-illustrations/RStudio_profiling_results.png">
+</div>
+
+
+Profiling - an easy way
+=======================
+
+Use `system.time()` function to measure the elapsed time.
+
+
+```r
+nRows = 4e4
+nCols = 100
+
+myData = matrix(rnorm(nRows * nCols, 
+                      mean = 5),
+                ncol = nCols)
+
+locColMeans = colMeans(myData)
+
+system.time(
+  for (ii in seq_along(locColMeans)) {
+    myData[, ii] <-
+      myData[, ii] - locColMeans[ii]
+  }
+)
+```
+
+```
+   user  system elapsed 
+  0.080   0.041   0.154 
+```
+
+
+Profiling with microbenchmark
+============================
+
+Use `microbenchmark` [package](https://cran.r-project.org/web/packages/microbenchmark/index.html) to accurately measure and compare the execution time of R expressions.
+
+Source code in `./examples/ex_profiling_time02.R`
+
+
+```r
+# Benchmark 3 approaches to center columns:
+# 1. using base R, loop over columns and subtract precomputed means,
+# 2. using data.table with lapply,
+# 3. using data.table, loop over columns and use set() function
+mbm = microbenchmark(
+  base_r = for (ii in seq_along(myColMeans)) {
+    data1[, ii] <-
+      data1[, ii] - myColMeans[ii]},
+  
+  dt_lapply = data2[, 
+                    (myColNames) := lapply(.SD, 
+                                           function(x) x - mean(x)), 
+                    .SDcols = myColNames],
+  
+  dt_for_set = for (ii in myColNames) 
+    set(data3, 
+        j = ii, 
+        value = data3[[ii]] - mean(data3[[ii]])),
+  
+  times = 100L)
+
+# Display benchmark table
+mbm
+```
+
+
+```
+Unit: milliseconds
+expr      min       lq     mean  median       uq       max neval cld
+base_r 672.9243 716.4792 878.6226 851.141 921.6990 1529.4567   100   b
+dt_lapply 347.4257 367.2748 469.3408 388.986 513.9202  944.1644   100  a 
+dt_for_set 336.9143 367.0250 445.6910 376.871 499.6137  943.2988   100  a 
+```
+
+Profiling with microbenchmark (2)
+============================
+
+
+```r
+# Plot results of microbenchmark
+ggplot(mbm) +
+  geom_violin(aes(x = expr, 
+                  y = time)) +
+  coord_flip()
+```
+
+<div align="center">
+<img src="presentation-main-illustrations/RStudio_profiling_microbenchmark_plot.png">
+</div>
+
+Debugging
+=========
+
+[Debugging with RStudio](https://support.rstudio.com/hc/en-us/articles/205612627-Debugging-with-RStudio).
+
+> Debugging is designed to help you find bugs by figuring out where the code is not behaving in the way that you expect. To do this, you need to:
+
+1. Begin running the code,
+2. Stop the code at the point where you suspect the problem is arising,
+3. Look at and/or walk through the code, step-by-step at that point.
+
+Debugging with browser()
+========================
+
+Source code in `examples/ex_debug_browser.R`
+
+Place the `browser()` function anywhere in the code to halt the code and start an environment browser. 
+
+
+```r
+# Input vector with numbers
+vX = c(7,2,8,1,3,17,6,34,37)
+
+# Initialise counter
+nCount = 0
+
+# Loop over the vector
+for (val in vX) {
+  if(val %% 2 == 0) {
+    nCount = nCount+1
+    cat(val, "is an even number\n")
+  }
+  browser()
+}
+```
+
+---
+
+<div align="center">
+<img src="presentation-main-illustrations/RStudio_debugging_browser.png">
+</div>
+
+Debugging with breakpoints
+========================
+
+Set breakpoint to stop on a line of code. 
+
+In RStudio, you set a breakpoint by clicking to the left of the line number in the editor. A red dot will appear.
+
+**Important**: the code needs to be *sourced* first. Click a `source` button in the upper right corner of the editor.
+
+---
+
+**A properly set breakpoint**
+
+<div align="center">
+<img src="presentation-main-illustrations/RStudio_debugging_breakpoint.png", width=100%>
+</div>
+
+**A deferred breakpoint**
+
+Rquires sourcing the code first.
+
+<div align="center">
+<img src="presentation-main-illustrations/RStudio_debugging_breakpoint_deferred.png", width=100%>
+</div>
+
+
+
+Vectorization
+=============
+
+R is a *high-level, interpreted* computer language. This means that R takes care of a lot of basic computer tasks for you.
+
+Most of R’s functions are vectorized, meaning that the function will operate on all elements of a vector without needing to loop through and act on each element one at a time. This makes writing code more concise, easy to read, and less error prone.
+
+Suppose we need to add 10M numbers to each other. This would be a *classical* way of doing it using a for loop:
+
+
+```r
+nNum = 1e7
+vA = rnorm(nNum)
+vB = rnorm(nNum)
+vCloop = rep(0., nNum)
+
+system.time(
+  for(ii in 1:nNum) {
+    vCloop[ii] = vA[ii] + vB[ii]
+  }  
+)
+```
+
+```
+   user  system elapsed 
+  1.167   0.036   1.260 
+```
+
+---
+
+Instead, R provides a convenient operator `+` that also works with vectors!
+
+
+```r
+system.time({vCvec = vA + vB})
+```
+
+```
+   user  system elapsed 
+  0.028   0.000   0.028 
+```
+
+The result of two operations is exactly the same, but the latter is way faster!
+
+
+```r
+all.equal(vCloop, vCvec)
+```
+
+```
+[1] TRUE
+```
+
+
+
+
+Avoid for loops?
+=================
+
+From [R-bloggers](https://www.r-bloggers.com/how-to-avoid-for-loop-in-r/):
+
+> A FOR loop is the most intuitive way to apply an operation to a series by looping through each item one by one, which makes perfect sense logically but should be avoided by useRs given the low efficiency.
+
+**However**, for loops can be fast **if** you follow some rules:
+
+1. Don’t use a loop when a vectorized alternative exists (see the previous slide).
+2. Don't increase the size of your objects, e.g. using `cbind`, `rbind`, during the loop! Instead, pre-allocate memory by predefining an object to hold the result. 
+
+
+```r
+nNum = 1e4
+vA = rnorm(nNum)
+vB = rnorm(nNum)
+
+myRes = c()
+system.time(
+  for(ii in 1:nNum) {
+    myRes = c(myRes, vA[ii] + vB[ii])
+  }  
+)
+```
+
+```
+   user  system elapsed 
+  0.243   0.233   0.501 
+```
+
+---
+
+
+```r
+# Pre-allocated vector where the result will be written to
+vC = rep(0., nNum)
+
+system.time(
+  for(ii in seq_along(vA)) {
+    vC[ii] = vA[ii] + vB[ii]
+  }  
+)
+```
+
+```
+   user  system elapsed 
+  0.004   0.000   0.004 
+```
+
+
+```r
+all.equal(myRes, vC)
+```
+
+```
+[1] TRUE
+```
+
+
+
+The result is the same, but pre-allocating the `vC` vector speeds up the computation by two orders of magnitude!
+
+The difference between the computation time increases with the size of the vector because without pre-allocating the memory, R is copying the existing vector before increasing its size with the `c` operation.
+
+Apply family
+============
+
+As an alternative to for loops, try using functions from the `apply` family, e.g. `lapply`, `sapply`, etc. The advantage is that it forces you to encapsulate your code into functions, which makes the code **reusable** and **modular**.
+
+For example, we have several CSV files in `examples/ex_apply_data` folder that we would like to read and combine into a single `data.table`:
+
+
+```r
+require(data.table)
+
+# List all CSV files in the folder; store them in a character vector
+vFiles = list.files(path = "examples/ex_apply_data/.", 
+                    pattern = "csv", 
+                    full.names = T)
+
+# Pre-allocate a list which will hold data tables from individual files
+lMyExp = list()
+
+# Loop over file names and read them
+for (ii in seq_along(vFiles)) {
+  lMyExp[[ii]] = fread(vFiles[[ii]])
+}
+
+# Combine the list into a data.table
+dtMyExp1 = rbindlist(lMyExp)
+```
+
+A simpler way is to use the `lapply` function that loops over all elements of the `vFiles` vector and applies a function `data.table::fread`. As previously, the result is stored in a list. Example [code](examples/ex_apply/ex_apply.html).
+
+
+```r
+lMyExp = lapply(vFiles, fread)
+dtMyExp2 = rbindlist(lMyExp)
+
+all.equal(dtMyExp1, dtMyExp2)
+```
+
+```
+[1] TRUE
+```
+
+Parallel computations using foreach
+=====================
+
+The main reason for using the `foreach` [package](https://cran.r-project.org/web/packages/foreach/vignettes/foreach.html) is that it supports parallel execution; it can execute repeated operations on multiple processors/cores on your computer, or on multiple nodes of a cluster.
+
+[R notebook](examples/ex_parallel_foreach/ex_parallel_foreach.html) with example calculations.
+
+Template code where the result of each iteration is stored in a `myResult` list:
+
+
+```r
+require(foreach)
+require(doParallel)
+
+numCores = 4
+doParallel::registerDoParallel(numCores)
+
+system.time({
+  myResult = foreach::foreach(ii=1:10,
+                              .packages='...') %dopar%
+    
+    myFunction(ii)
+  ...
+})
+doParallel::stopImplicitCluster()
+```
+
+Here, the results of each iteration are combined into a vector:
+
+
+```r
+system.time({
+  myResult = foreach::foreach(ii=1:10,
+                              .combine = 'c',
+                              .packages='...') %dopar%
+    
+    myFunction(ii)
+  ...
+})
+```
+
+
+Command-line parameters
+=======================
+
+Parse command-line arguments using the `optparse` package (code taken from [R-bloggers](https://www.r-bloggers.com/passing-arguments-to-an-r-script-from-command-lines/))
+
+Here, we create two command-line parameters `-r` and `-d`. Both have their respective options in the long format, `--rootdir` and `--debug`.
+
+The default value for `-r` is `NULL` which, together with a subsequent `if-stop` statement, makes it a required parameter. The `-d` has a default value set to `FALSE`.
+
+
+```r
+#!/usr/bin/env Rscript
+
+require(optparse)
+
+option_list = list(
+  optparse::make_option(c("-r", "--rootdir"), type="character", default=NULL, 
+                        help="full path to root directory", metavar="character"),
+  optparse::make_option(c("-d", "--debug"), action="store_true", default = FALSE, dest = 'debug', 
+                        help="Print extra output")
+); 
+
+opt_parser = optparse::OptionParser(option_list=option_list)
+opt = optparse::parse_args(opt_parser)
+```
+
+Command-line parameters (cont'd)
+=======================
+
+The list `opt` contains all the arguments sorted by order of appearance in option_list and which can be called by their names as declared in the object: `opt$rootdir`, `opt$debug`, etc.
+
+Manage `NULL` arguments as follows:
+
+
+```r
+if (is.null(opt$rootdir)){
+  optparse::print_help(opt_parser)
+  stop("Please supply a full path to root directory with data to analyse.\n", call.=FALSE)
+}
+
+l.par$dir.root = opt$rootdir
+cat(sprintf('Working in:\n%s\n\n', l.par$dir.root))
+
+if (opt$debug)
+  cat('\nEntering debug mode. More output...\n\n')
+```
+
+Command-line parameters (cont'd)
+=======================
+
+The source code for this example is in `examples/ex_opparse.R`.
+
+Thanks to the first line (`#!/usr/bin/env Rscript`), a so-called [shebang](https://en.wikipedia.org/wiki/Shebang_%28Unix%29), you can run the script by simply executing `./ex_optparse.R` in the command line. Otherwise, you can type `Rscript ex_optparse.R`. 
+
+This is the output, if no parameters given:
+
+```
+Loading required package: optparse
+Usage: ./ex_optparse.R [options]
+
+
+Options:
+	-r CHARACTER, --rootdir=CHARACTER
+		full path to root directory
+
+	-d, --debug
+		Print extra output
+
+	-h, --help
+		Show this help message and exit
+
+
+Error: Please supply a full path to root directory with data to analyse.
+Execution halted
+```
+
