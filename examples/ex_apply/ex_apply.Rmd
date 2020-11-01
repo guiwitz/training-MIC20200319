@@ -1,0 +1,94 @@
+---
+title: "Reading files from a folder"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::html_clean:
+    highlight: kate
+    code_folding: hide
+---
+
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=FALSE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+# Intro
+
+To convert this notebook into HTML (to *knit* it), type `make` in the command line of this folder or click **Knit** icon in the top bar of the RStudio editor.
+
+Demonstrate reading files from a folder and combining them into a single object
+
+```{r, echo = T}
+require(data.table)
+
+# List all CSV files in the folder; store them in a character vector
+vFiles = list.files(path = "../ex_apply_data/.", 
+                    pattern = "csv", 
+                    full.names = T)
+```
+
+# Combine into a single object
+
+```{r, echo = T}
+lMyExp = lapply(vFiles, fread)
+dtMyExp = rbindlist(lMyExp)
+
+head(dtMyExp)
+```
+
+```{r, echo = T}
+tail(dtMyExp)
+```
+
+**Problem**: combined `data.table` contains data from all experiments one after another. Which one is which???
+
+# Combine with experiment info
+
+```{r, echo = T}
+lMyExp = lapply(vFiles, function(inFile) {
+  
+  # Read a single file
+  locDT = fread(inFile)
+  
+  # Add a column with the file name
+  locDT[,
+        fileName := inFile]
+})
+
+dtMyExp = rbindlist(lMyExp)
+
+head(dtMyExp)
+```
+
+**Improvement**: extract experiment number from the `fileName` column using `gsub` function and [regular expressions](https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf).
+
+The file name is of the form `xx/xx/exp_01.csv`. We would like to extract the number after `exp_` string. The regular expression captures a group with at least one digit (`[0-9]+`).
+
+```{r, echo = T}
+dtMyExp[,
+        expName := as.integer(gsub(".*exp_([0-9]+).*", "\\1", fileName))]
+
+# remove the unnecessary column fileName
+dtMyExp[,
+        fileName := NULL]
+
+head(dtMyExp)
+```
+
+```{r, echo = T}
+tail(dtMyExp)
+
+```
+

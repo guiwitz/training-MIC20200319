@@ -1,0 +1,132 @@
+---
+title: "Parallel computations with foreach"
+author: "Maciej Dobrzyński"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::html_clean:
+    highlight: kate
+    code_folding: hide
+---
+
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=FALSE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+# Intro
+
+To convert this notebook into HTML (to *knit* it), type `make` in the command line of this folder or click **Knit** icon in the top bar of the RStudio editor.
+
+The example CPU intensive calculation taken from [here](https://cran.r-project.org/web/packages/foreach/vignettes/foreach.html)
+
+In this example a random forest model is calculated for a predictor matrix of nRow x nCol random gaussian numbers and a response vector with two classes.
+
+```{r, echo=T}
+## Load required packages
+require(randomForest)
+require(foreach)
+require(doParallel)
+
+## Define variables
+# Number of rows and columns for a predictor matrix
+nRow = 1000
+nCol = 5
+
+# Create a predictor matrix with normally distributed random numbers
+mX <- matrix(runif(nRow * nCol), nRow)
+
+# Create a vector with numbers that belong to two factors, 1 & 2
+# These are classes for machine learning classification, i.e. a response vector
+vY <- gl(2, as.integer(round(nRow/2)))
+
+# Create a vector with iterator;
+# The foreach will loop over that vector 4 times and
+# will create a tree ensemble of 4000 decision trees.
+vIter = rep(4000, 4)
+```
+
+# Sequential calculation
+
+The `randomForest` function will be repeated 4 times and the result will be assigned to `resRF` variable which holds random forests from each iteration combined into a single tree ensemble using `randomForest::combine` function.
+
+```{r, echo = T}
+system.time({
+  resRF = foreach(ntree=vIter,
+                  .combine = randomForest::combine) %do%
+    randomForest(mX, vY, 
+                 ntree=ntree)
+})
+```
+
+The resulting tree ensemble.
+
+```{r, echo = T}
+resRF
+```
+
+# Parallel with 2 cores
+
+We need to let each independent process know to include the `randomForest` package.
+
+To specify the number of cores use `registerDoParallel()` function from `doParallel` package. Here, we will use 2 cores.
+
+```{r, echo = T}
+numCores = 2
+doParallel::registerDoParallel(numCores)
+```
+
+To check the number of available cores on the system use `parallel::detectCores()`.
+
+```{r, echo = T}
+parallel::detectCores()
+```
+
+Note the `stopImplicitCluster()` to de-register the cluster. Provides a way for clean exit.
+
+```{r, echo = T}
+system.time({
+  resRF = foreach(ntree=vIter, 
+                  .combine = randomForest::combine,
+                  .packages='randomForest') %dopar%
+    randomForest(mX, vY, 
+                 ntree=ntree)
+})
+
+doParallel::stopImplicitCluster()
+```
+
+# Parallel with 4 cores
+
+```{r, echo = T}
+numCores = 4
+doParallel::registerDoParallel(numCores)
+
+system.time({
+  resRF = foreach::foreach(ntree=vIter,
+                           .combine = randomForest::combine,
+                           .packages='randomForest') %dopar%
+    randomForest::randomForest(mX, vY, 
+                               ntree=ntree)
+})
+doParallel::stopImplicitCluster()
+```
+
+# Conclusion
+
+The reason the elapsed time does not increase linearly with the number of processes is the following. 
+
+First, The calculation of tree ensembles takes place in parallel, however, the subsequent `combine` is a single-process operation. This is an important part of any parallel computation. Gathering data from all processes also takes time and it might be a significant part of the execution time! 
+
+Second, modern CPUs have cores with [HyperThreading](https://en.wikipedia.org/wiki/Hyper-threading), which presents a single physical core of the CPU as two logical cores to the system. It allows to perform several instructions simultaneously on a single physical core. While it can improve the performance of some calculations, pushing a lot of the same type of calculations at the same time might actually hamper the performance. 
