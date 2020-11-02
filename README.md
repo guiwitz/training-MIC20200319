@@ -4,7 +4,9 @@ Presentation, the code, and exercises to accompany the [MIC training](https://il
 
 ## File description
 
-- `presentation-main.Rpres` and `html` - an R presentation with workshop lecture and exercises.
+- `presentation-main.Rpres` and `html` - the main presentation with workshop lecture and exercises,
+- `examples` - code snippets and examples for the presentation,
+- `practicals` - data, presentation, and code for the practical session.
 
 ## Required software
 
