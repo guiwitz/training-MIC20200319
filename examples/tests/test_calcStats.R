@@ -1,4 +1,4 @@
-require(testthat)
+library(testthat)
 source("../calcStats.R")
 
 testthat::test_that("tests", {
