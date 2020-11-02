@@ -1,3 +1,5 @@
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/guiwitz/training-MIC20200319/master?urlpath=rstudio)
+
 # MIC training: Modern data analysis in R/RStudio
 
 Presentation, the code, and exercises to accompany the [MIC training](https://ilias.unibe.ch/goto_ilias3_unibe_crs_1713478.html) at UniBe, November 3, 2020.
