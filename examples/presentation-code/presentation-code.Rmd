@@ -1,0 +1,513 @@
+---
+title: "Presentation code"
+author: "Maciej Dobrzyński"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::html_clean:
+    highlight: kate
+    code_folding: show
+---
+
+# Intro
+
+This notebook accompanies *MIC training: Modern data analysis in R/RStudio*. The corresponding presentation is [here](../../presentation-main.html).
+
+To convert this notebook into HTML (to *knit* it), type `make` in the command line of this folder or click **Knit** icon in the top bar of the RStudio editor.
+
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+               cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+# data.table
+
+Define a `data.table`:
+
+```{r, echo = T}
+library(data.table)
+dtBabies = data.table(name= c("Jackson", "Emma", "Liam", "Ava"), 
+                      gender = c("M", "F", "M", "F"), 
+                      year2011= c(74.69, NA, 88.24, 81.77), 
+                      year2012=c(84.99, NA, NA, 96.45), 
+                      year2013=c(91.73, 75.74, 101.83, NA),
+                      year2014=c(95.32, 82.49, 108.23, NA),
+                      year2015=c(107.12, 93.73, 119.01, 105.65))
+dtBabies
+```
+Select specific records/rows:
+
+```{r, echo = T}
+dtBabies[gender == 'M']
+```
+
+Select specific variables/columns:
+
+```{r, echo = T}
+dtBabies[, .(name, gender, year2015)]
+```
+Calculate the mean of a single column:
+
+```{r, echo = T}
+dtBabies[, 
+         .(meanWeight = mean(year2015))]
+```
+
+Calculate the mean of a single column by gender:
+
+```{r, echo = T}
+dtBabies[, 
+         .(meanWeight = mean(year2015)), 
+         by = gender]
+```
+
+# data.table - reference by name
+
+Define a list of string variables with column names:
+
+```{r, echo = T}
+lCol = list(meas = 'weight',
+            time = 'year',
+            group = c('name', 'gender'),
+            timeLast = 'year2015')
+lCol
+```
+
+Select records with `gender` column equal to `M`.
+
+The name of the gender column is stored in one of the list elements.
+
+```{r, echo = T}
+lCol$group
+```
+
+We need the second entry of that list element.
+
+```{r, ehco = T}
+lCol$group[2]
+```
+
+To let `data.table` know that we want to provide column names via pre-defined string variables, we need to use function `get` in the `i` position.
+
+Hence, to select rows:
+
+```{r, echo = T}
+dtBabies[get(lCol$group[[2]]) == 'M']
+```
+
+To select specific columns we can provide them this way:
+
+```{r, echo = T}
+myColumns = c(lCol$group[[1]], lCol$timeLast)
+dtBabies[, myColumns, with = F]
+```
+Or simpler (note the double dot):
+
+```{r, echo = T}
+dtBabies[, ..myColumns]
+```
+
+To aggregate by calculating the mean:
+
+```{r, echo = T}
+dtBabies[, 
+         .(meanWeight = mean(get(lCol$timeLast))), 
+         by = c(lCol$group[2])]
+```
+
+# Wide to long format
+Our data table is in the wide format. To convert it to long format, use function `melt` from the `data.table` package.
+
+Provide the names of **identification** (`id.vars`) and **measure** variables (`measure.vars`). If none are provided, `melt` guesses them automatically, which may result in a wrong conversion. Both variables can be given as strings with column names, or as column numbers.
+
+The original data frame contains missing values; `na.rm=T` omits them in the long-format table.
+
+```{r, echo = T}
+dtBabiesLong = data.table::melt(dtBabies, 
+                                id.vars = c('name', 'gender'), 
+                                measure.vars = 3:7,
+                                variable.name = 'year', 
+                                value.name = 'weight',
+                                na.rm = T)
+head(dtBabiesLong, n = 5L)
+```
+
+# Long to wide
+
+The function `dcast` converts from long to wide format. The function has a so-called *formula interface* that specifies a combination of variables that uniquely identify a row.
+
+Note that because some combinations of `name + gender + year` do not exist, the `dcast` function will introduce `NAs`.
+
+```{r, echo = T}
+dtBabiesWide = data.table::dcast(dtBabiesLong, 
+                                 name + gender ~ year, 
+                                 value.var = 'weight')
+
+dtBabiesWide
+```
+
+One way to use the formula interface with string variables is to create the formula string explicitly by concatenating individual string pieces:
+
+```{r, echo = T}
+as.formula(
+  paste0(
+    lCol$group[[1]], "+", 
+    lCol$group[[2]], "~", 
+    lCol$time))
+```
+
+```{r, echo = T}
+dtBabiesWide2 = data.table::dcast(dtBabiesLong, 
+                                  as.formula(
+                                    paste0(
+                                      lCol$group[[1]], "+", 
+                                      lCol$group[[2]], "~", 
+                                      lCol$time)), 
+                                  value.var = 'weight')
+
+all.equal(dtBabiesWide,
+          dtBabiesWide2)
+```
+
+# data.table - IO
+
+Fast reading of the files; use `nThread` option to take advantage of multiple threads and read files even faster! 
+
+Compressed files can be read directly without decompressing them first!
+
+```{r, echo = T}
+myDT = data.table::fread(file = "../../practicals/data/m1_allGF_wExpDescr.csv.gz", 
+                         nThread = 2)
+```
+
+Write as a CSV file and then compress it:
+
+```{r, echo = T}
+# Write a subset
+myFilePath = "testOutput.csv"
+data.table::fwrite(x = myDT[Stim_Treat == "EGF" & Metadata_T < 10],
+                   file = myFilePath, 
+                   row.names = F)
+
+R.utils::gzip(myFilePath, overwrite = T)
+```
+
+```{r, echo = F}
+# Clean
+rm(myDT,
+   myFilePath,
+   dtBabiesWide,
+   dtBabiesWide2)
+```
+
+# Plotting with ggplot2
+
+Let's plot weight of individual babies over time.
+
+```{r, echo = F}
+library(ggplot2)
+
+ggplot2::ggplot(dtBabiesLong, 
+                aes(x = year, 
+                    y = weight)) +
+  geom_line()
+```
+
+
+Oops, the plotting function doesn't know how to link the points. The logical way to link them is by the `name` column. We need to tell `ggplot2` how to group the data.
+
+Also, to avoid hard-coding column names we use `aes_string` instead of `aes`. 
+
+The data will be plotted as lines, with additional dots to indicate data points.
+
+```{r, echo = T}
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = lCol$time, 
+                           y = lCol$meas, 
+                           group = lCol$group[1])) +
+  geom_line() +
+  geom_point()
+```
+
+In order to produce facets per `gender`, we use function `facet_wrap`. 
+
+```{r, echo = T}
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = lCol$time, 
+                           y = lCol$meas, 
+                           group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(lCol$group[2])
+```
+## Summaries
+
+```{r, echo = T}
+ggplot2::ggplot(dtBabiesLong, 
+                     aes_string(x = lCol$time, 
+                                y = lCol$meas, 
+                                group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(lCol$group[2]) +
+  stat_summary(fun = mean, 
+               aes(group=1), 
+               geom = "line", 
+               colour = 'red')
+```
+
+## Trends
+
+```{r, echo = T}
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = lCol$time, 
+                           y = lCol$meas)) +
+  geom_point() +
+  facet_wrap(lCol$group[2]) +
+  geom_smooth(method = "lm",
+              formula = y ~ x,
+              colour = "red")
+```
+
+Oops, regression analysis requires numerical variables! Here, the time in the `year` column is a string and is treated as a categorical variable.
+
+Extract numerical value from the `year` column and assign it to a `yearNum` column. The result of the string substituting function `gsub` is also a string, hence we need to convert the result to a number using `as.numeric` function.
+
+```{r, echo = T}
+dtBabiesLong[,
+             yearNum := as.numeric(gsub("year", "", get(lCol$time)))]
+```
+
+```{r, echo = T}
+ggplot2::ggplot(dtBabiesLong, 
+                aes_string(x = "yearNum", 
+                           y = lCol$meas)) +
+  geom_point() +
+  facet_wrap(lCol$group[2]) +
+  geom_smooth(method = "lm",
+              formula = y ~ x,
+              colour = "red")
+```
+
+Shaded regions correspond to 95% CI.
+
+## Customisations
+
+Lot's of different themes and customisations, e.g. `theme_bw()`, `theme_minimal()`, etc.
+
+Also [check](https://mran.microsoft.com/snapshot/2017-02-04/web/packages/ggthemes/vignettes/ggthemes.html) the `ggthemes` package for additional themes and colour scales.
+
+```{r, echo = T}
+p1 = ggplot2::ggplot(dtBabiesLong, 
+                     aes_string(x = lCol$time, 
+                                y = lCol$meas, 
+                                group = lCol$group[1])) +
+  geom_line() +
+  geom_point() +
+  stat_summary(fun = mean, 
+               aes(group=1), 
+               geom = "line", 
+               colour = 'red') +
+  facet_wrap(lCol$group[2]) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+```
+
+Note, that the plot was assigned to a variable `p1` and there is no graphics output. This is useful if we want to do something additional with the plot. For example, we can add additional `ggplot` layers or save the plot to a file.
+
+To display the plot simply invoke the variable:
+
+```{r, echo = T}
+p1
+```
+
+
+## Interactive plots
+
+Now when we have the plot stored in `p1` variable, we can convert it to an interactive plot using `plotly` package.
+
+```{r, echo = T}
+library(plotly)
+plotly::ggplotly(p1)
+```
+
+```{r, echo = F}
+# Clean
+rm(p1)
+```
+
+
+# Functions
+
+Let's test the `calcStats()` [function](../calcStats.R) on our dataset.
+
+```{r, echo = T}
+source("../calcStats.R")
+
+calcStats(inDt = dtBabiesLong, 
+          inMeasVar = "weight",
+          inGroupName = "gender",
+          inRobust = T)
+```
+
+## Unit testing
+
+```{r, echo = T}
+library(testthat)
+
+# calculated result
+resCalc = data.table(meas = 1:9)
+resTrue = data.table(meanMeas = 5.0)
+
+# Test should pass; NO message will be produced
+testthat::expect_equal(calcStats(inDt = resCalc,
+                                 inMeasVar = "meas"), 
+                       resTrue)
+```
+
+```{r, echo = T, eval = F}
+# Test should not pass; error message will appear
+resTrue = data.table(meanMeas = 4.0)
+
+testthat::expect_equal(calcStats(inDt = resCalc,
+                                 inMeasVar = "meas"), 
+                       resTrue)
+```
+
+## Unit testing with test folder
+
+Create a `test` folder and create individual files with tests. The name of these files should start with `test_` prefix, e.g. `test_calcStats.R`.
+
+```{r, echo = T}
+library(testthat)
+
+testthat::test_dir("../tests")
+```
+
+```{r, echo = F}
+# Celan
+rm(dtBabies,
+   dtBabiesLong,
+   lCol,
+   resCalc,
+   resTrue,
+   myColumns,
+   calcStats)
+```
+
+## Profiling
+
+[Source code](../ex_profiling_time_01.R) with examples for `profvis`.
+
+[Source code](../ex_profiling_time_02.R) with examples for `microbenchmark`.
+
+## Debugging
+
+[Source code](../ex_debug_browser.R) with examples.
+
+# Vectorization
+
+Suppose we need to add 10M numbers to each other. This would be a *classical* way of doing it using a for loop:
+
+```{r, echo = T}
+nNum = 1e7
+vA = rnorm(nNum)
+vB = rnorm(nNum)
+vCloop = rep(0., nNum)
+
+system.time(
+  for(ii in 1:nNum) {
+    vCloop[ii] = vA[ii] + vB[ii]
+  }  
+)
+```
+
+Instead, R provides a convenient operator `+` that also works with vectors!
+
+```{r, echo = T}
+system.time({vCvec = vA + vB})
+```
+
+The result of two operations is exactly the same, but the latter is way faster!
+
+```{r, echo = T}
+all.equal(vCloop, vCvec)
+```
+
+```{r, echo=FALSE}
+# Clean
+rm(nNum,
+   vA, vB, vCloop, vCvec)
+```
+
+# For loops
+
+For loops can be fast **if** you follow some rules:
+
+1. Don’t use a loop when a vectorized alternative exists (see the previous slide).
+2. Don't increase the size of your objects, e.g. using `cbind`, `rbind`, during the loop! Instead, pre-allocate memory by predefining an object to hold the result. 
+
+Example of an inefficient loop: at every iteration of the loop, `myRes` increases in size because a new element is added to this vector.
+
+```{r, echo = T}
+nNum = 1e4
+vA = rnorm(nNum)
+vB = rnorm(nNum)
+
+myRes = c()
+system.time(
+  for(ii in 1:nNum) {
+    myRes = c(myRes, vA[ii] + vB[ii])
+  }  
+)
+```
+
+Example of an efficient loop: the result vector `vC` is pre-allocated and has the same size throughout the iteration of the loop. The only thing that changes is the content of that vector!
+
+```{r}
+# Pre-allocated vector where the result will be written to
+vC = rep(0., nNum)
+
+system.time(
+  for(ii in seq_along(vA)) {
+    vC[ii] = vA[ii] + vB[ii]
+  }  
+)
+```
+
+```{r}
+all.equal(myRes, vC)
+```
+
+```{r, echo=FALSE}
+rm(nNum,
+   vA, vB, myRes, vC)
+```
+
+The result is the same, but pre-allocating the `vC` vector speeds up the computation by two orders of magnitude!
+
+The difference between the computation time increases with the size of the vector because without pre-allocating the memory, R is copying the existing vector before increasing its size with the `c` operation.
+
+# Apply functions
+
+[R notebook](../ex_apply/ex_apply.html) with examples.
+
+# Parallel computations using foreach
+
+[R notebook](../ex_parallel_foreach/ex_parallel_foreach.html) with example calculations.
+
+# Command-line parameters
+
+[Source code](../ex_optparse.R) with examples.
