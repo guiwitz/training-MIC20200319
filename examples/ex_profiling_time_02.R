@@ -1,9 +1,9 @@
 # Code profiling using microbenchmark package
 # The code creates a large matrix and subtracts from every column its mean.
 
-require(microbenchmark)
-require(data.table)
-require(ggplot2)
+library(microbenchmark)
+library(data.table)
+library(ggplot2)
 
 ## Define data size
 nRows = 4e5

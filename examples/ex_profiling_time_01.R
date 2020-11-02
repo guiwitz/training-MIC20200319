@@ -1,7 +1,7 @@
 # Code profiling using interactive RStudio GUI
 # The code creates a large matrix and subtracts from every column its mean.
 
-require(profvis)
+library(profvis)
 
 # Define data size
 nRows = 4e5

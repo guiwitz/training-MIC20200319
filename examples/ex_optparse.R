@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 ## Load librares ----
-require(optparse)
+library(optparse)
 
 ## Process command-line parameters ----
 option_list = list(

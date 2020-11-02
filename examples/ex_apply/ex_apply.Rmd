@@ -31,7 +31,7 @@ To convert this notebook into HTML (to *knit* it), type `make` in the command li
 Demonstrate reading files from a folder and combining them into a single object
 
 ```{r, echo = T}
-require(data.table)
+library(data.table)
 
 # List all CSV files in the folder; store them in a character vector
 vFiles = list.files(path = "../ex_apply_data/.", 

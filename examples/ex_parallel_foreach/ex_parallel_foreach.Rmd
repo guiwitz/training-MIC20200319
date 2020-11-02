@@ -35,9 +35,9 @@ In this example a random forest model is calculated for a predictor matrix of nR
 
 ```{r, echo=T}
 ## Load required packages
-require(randomForest)
-require(foreach)
-require(doParallel)
+library(randomForest)
+library(foreach)
+library(doParallel)
 
 ## Define variables
 # Number of rows and columns for a predictor matrix
